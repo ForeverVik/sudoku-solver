@@ -17,7 +17,7 @@ def main():
     #Gets the sudoku board from the json file
     with open('sudoku.json') as f:
         req = json.load(f)
-    baseBoard = req['newboard']['grids'][0]['value']
+    baseBoard = req['board']
 
     ss = SudokuSolver(baseBoard)
     st = time.time()
@@ -36,7 +36,6 @@ def main():
             UI.solvedWindow(ss)
 
     pygame.quit()
-
 
 if __name__ == '__main__':
     main()

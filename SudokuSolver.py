@@ -20,6 +20,7 @@ class SudokuSolver():
         self.isSolved = False
         self.iterations = 0
         self.temp = []
+        self.pairs = {}
 
     #Prints out the current board neatly
     def __str__(self):
@@ -165,6 +166,11 @@ class SudokuSolver():
                 if self.getSizeAt(i,j) == 1:
                     num = self.getNumsAt(i,j)[0]
 
+                    for k in self.pairs:
+                        for l in self.pairs[k]:
+                            if num in l:
+                                self.pairs[k].remove(l)
+
                     #Remove the number from every other square in the row
                     rowRemove = self.searchRow(i, [num])
                     rowRemove.remove(j)
@@ -258,54 +264,35 @@ class SudokuSolver():
             for j in range(self.size):
                 toRemove = []
                 if len(self.currentBoard[i][j]) == 2:
-                    a = self.currentBoard[i][j][0]
-                    b = self.currentBoard[i][j][1]
-
+                    nums = self.getNumsAt(i,j)
+                    
                     identicalGrid = self.searchGrid(i, j, self.currentBoard[i][j], True)
                     if len(identicalGrid) == 2:
-                        sameGrid = self.searchGrid(i, j, [a])
-                        for g in identicalGrid:
-                            sameGrid.remove(g)
-                        
-                        for g in sameGrid:
-                            toRemove.append([g[0],g[1],a])
-
-                        sameGrid = self.searchGrid(i, j, [b])
-                        for g in identicalGrid:
-                            sameGrid.remove(g)
-                        
-                        for g in sameGrid:
-                            toRemove.append([g[0],g[1],b])
+                        for n in nums:
+                            sameGrid = self.searchGrid(i, j, [n])
+                            for g in identicalGrid:
+                                sameGrid.remove(g)
+                            
+                            for g in sameGrid:
+                                toRemove.append([g[0],g[1],n])
                         
                         if identicalGrid[0][0] == identicalGrid[1][0]:
-                            sameRow = self.searchRow(i, [a])
-                            for g in identicalGrid:
-                                sameRow.remove(g[1])
-                            
-                            for g in sameRow:
-                                toRemove.append([g[0],g[1],a])
-                            
-                            sameRow = self.searchRow(i, [b])
-                            for g in identicalGrid:
-                                sameRow.remove(g[1])
-                            
-                            for g in sameRow:
-                                toRemove.append([g[0],g[1],b])
+                            for n in nums:
+                                sameRow = self.searchRow(i, [n])
+                                for g in identicalGrid:
+                                    sameRow.remove(g[1])
+                                
+                                for g in sameRow:
+                                    toRemove.append([i,g,n])
                         
                         if identicalGrid[0][1] == identicalGrid[1][1]:
-                            sameCol = self.searchCol(j, [a])
-                            for g in identicalGrid:
-                                sameCol.remove(g[0])
-                            
-                            for g in sameCol:
-                                toRemove.append([g[0],g[1],a])
-                            
-                            sameCol = self.searchCol(j, [b])
-                            for g in identicalGrid:
-                                sameCol.remove(g[0])
-                            
-                            for g in sameCol:
-                                toRemove.append([g[0],g[1],b])
+                            for n in nums:
+                                sameCol = self.searchCol(j, [n])
+                                for g in identicalGrid:
+                                    sameCol.remove(g[0])
+                                
+                                for g in sameCol:
+                                    toRemove.append([g,j,n])
 
                 for t in toRemove:
                         if len(self.currentBoard[t[0]][t[1]]) > 1 and self.currentBoard[t[0]][t[1]].count(t[2]):
@@ -336,107 +323,72 @@ class SudokuSolver():
                                 for g in gridPairs:
                                     for m in temp:
                                         toRemove.append([g[0], g[1], m])
+                                
+                                #Used for XY Wing Test
+                                if f"{a}{b}" in self.pairs:
+                                    self.pairs[f"{a}{b}"].append((i,j))
+                                else:
+                                    self.pairs[f"{a}{b}"] = [(i,j)]
                     
                     for t in toRemove:
                         if len(self.currentBoard[t[0]][t[1]]) > 1 and self.currentBoard[t[0]][t[1]].count(t[2]):
                             self.currentBoard[t[0]][t[1]].remove(t[2])
                                 
+    #Same as pairTest but for 3 numbers and squares
+    def tripletTest(self):
+        self.prevBoard = deepcopy(self.currentBoard)
 
-    ##Recursively applies solving algorithms to the board until solved
+        for i in range(self.size):
+            for j in range(self.size):
+                toRemove = []
+                if len(self.currentBoard[i][j]) == 3:
+                    nums = self.getNumsAt(i,j)
+
+                    identicalGrid = self.searchGrid(i, j, self.currentBoard[i][j], True)
+                    if len(identicalGrid) == 3:
+                        for n in nums:
+                            sameGrid = self.searchGrid(i, j, [n])
+                            for g in identicalGrid:
+                                sameGrid.remove(g)
+                        
+                        print(f"found triple {nums} at {identicalGrid}")
+
+                        #Same row
+                        if identicalGrid[0][0] == identicalGrid[1][0] == identicalGrid [2][0]:
+                            for n in nums:
+                                sameRow = self.searchRow(i, [n])
+                                for g in identicalGrid:
+                                    sameRow.remove(g[1])
+                                
+                                for g in sameRow:
+                                    toRemove.append([g[0],g[1],n])
+                        
+                        #Same col
+                        if identicalGrid[0][1] == identicalGrid[1][1] == identicalGrid[2][1]:
+                            for n in nums:
+                                sameCol = self.searchCol(j, [n])
+                                for g in identicalGrid:
+                                    sameCol.remove(g[0])
+                                
+                                for g in sameCol:
+                                    toRemove.append([g[0],g[1],n])
+
+                for t in toRemove:
+                        if len(self.currentBoard[t[0]][t[1]]) > 1 and self.currentBoard[t[0]][t[1]].count(t[2]):
+                            self.currentBoard[t[0]][t[1]].remove(t[2])    
+
+    #Recursively applies solving algorithms to the board until solved
     def solve(self):
         self.iterations+=1
+
         self.soloTest()
         self.singlesTest()
         self.lineTest()
         self.hiddenPairTest()
         self.pairTest()
+        self.tripletTest()
 
         if self.checkIfSolved():
+                print(self.pairs)
                 return
         self.solve()
-            
-        '''                                                       
-    def pairTest(self):
-        for i in range(self.size):
-            for j in range(self.size):
-                if len(self.currentBoard[i][j]) == 2:
-                    a = self.currentBoard[i][j][0]
-                    b = self.currentBoard[i][j][1]
-                    sameRow = self.searchRow(i, [a,b])
-                    sameRow.remove(j)
-                    sameCol = self.searchCol(j, [a,b])
-                    sameCol.remove(i)
-
-                    for k in sameRow:
-                        if self.getGridAt(i,j) == self.getGridAt(i,k) and self.currentBoard[i][k] == self.currentBoard[i][j]:
-                            print(f"examining pair {a},{b} in row {i} col {j} and row {i} col {k}")
-                            print(self)
-
-                            gridRemoveA = self.searchGrid(i, j, [a])
-                            gridRemoveA.remove([i,j])
-                            gridRemoveA.remove([i,k])
-
-                            gridRemoveB = self.searchGrid(i, j, [b])
-                            gridRemoveB.remove([i,j])
-                            gridRemoveB.remove([i,k])
-
-                            for grid in gridRemoveB:
-                                if len(self.currentBoard[grid[0]][grid[1]]) > 1 and self.currentBoard[grid[0]][grid[1]].count(a):
-                                    self.currentBoard[grid[0]][grid[1]].remove(a)
-                            for grid in gridRemoveB:
-                                if len(self.currentBoard[grid[0]][grid[1]]) > 1 and self.currentBoard[grid[0]][grid[1]].count(b):
-                                    self.currentBoard[grid[0]][grid[1]].remove(b)
-
-                            rowRemoveA = self.searchRow(i, [a])
-                            rowRemoveA.remove(j)
-                            rowRemoveA.remove(k)
-
-                            rowRemoveB = self.searchRow(i, [b])
-                            rowRemoveB.remove(j)
-                            rowRemoveB.remove(k)
-        
-                            for col in rowRemoveA:
-                                if len(self.currentBoard[i][col]) > 1 and self.currentBoard[i][col].count(a):
-                                    self.currentBoard[i][col].remove(a)
-                            
-                            for col in rowRemoveB:
-                                if len(self.currentBoard[i][col]) > 1 and self.currentBoard[i][col].count(b):
-                                    self.currentBoard[i][col].remove(b)
-
-                    for k in sameCol:
-                        if self.getGridAt(i,j) == self.getGridAt(k,j) and self.currentBoard[k][j] == self.currentBoard[i][j]:
-                            print(self.currentBoard[k][j])
-                            print(f"VERT examining pair {a},{b} in row {i} col {j} and row {k} col {j}")
-                            print(self)
-
-                            gridRemoveA = self.searchGrid(i, j, [a])
-                            gridRemoveA.remove([i,j])
-                            gridRemoveA.remove([k,j])
-
-                            gridRemoveB = self.searchGrid(i, j, [b])
-                            gridRemoveB.remove([i,j])
-                            gridRemoveB.remove([k,j])
-
-                            for grid in gridRemoveB:
-                                if len(self.currentBoard[grid[0]][grid[1]]) > 1 and self.currentBoard[grid[0]][grid[1]].count(a):
-                                    self.currentBoard[grid[0]][grid[1]].remove(a)
-                            for grid in gridRemoveB:
-                                if len(self.currentBoard[grid[0]][grid[1]]) > 1 and self.currentBoard[grid[0]][grid[1]].count(b):
-                                    self.currentBoard[grid[0]][grid[1]].remove(b)
-
-                            colRemoveA = self.searchCol(j, [a])
-                            colRemoveA.remove(i)
-                            colRemoveA.remove(k)
-
-                            colRemoveB = self.searchCol(j, [b])
-                            colRemoveB.remove(i)
-                            colRemoveB.remove(k)
-        
-                            for row in colRemoveA:
-                                if len(self.currentBoard[row][j]) > 1 and self.currentBoard[row][j].count(a):
-                                    self.currentBoard[row][j].remove(a)
-                            
-                            for row in colRemoveB:
-                                if len(self.currentBoard[row][j]) > 1 and self.currentBoard[row][j].count(b):
-                                    self.currentBoard[row][j].remove(b)
-    '''    
