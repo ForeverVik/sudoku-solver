@@ -2,7 +2,6 @@ import pygame
 import json
 from UserInterface import UserInterface
 from SudokuSolver import SudokuSolver
-import time
 
 def main():
     #Pygame Initialization
@@ -12,28 +11,23 @@ def main():
     window = pygame.display.set_mode([settings["window"]["WIDTH"], settings["window"]["HEIGHT"]])
     pygame.display.set_caption("Sudoku Solver")
     pygame.display.set_icon(pygame.image.load("assets/icon.png"))
+
+    #UI and SS Initialization
     UI = UserInterface(window, settings["window"]["BG_COLOR"])
+    ss = SudokuSolver()
 
-    #Gets the sudoku board from the json file
-    with open('sudoku.json') as f:
-        req = json.load(f)
-    baseBoard = req['board']
-
-    ss = SudokuSolver(baseBoard)
-    st = time.time()
-
-    #Recursively applies solving algorithms to the board until solved
-    ss.solve()
-    count = ss.iterations
-    et = time.time()
-    print(f"Board solved in {count} iterations, {et-st} seconds")
-    
     #Displays windows based on the UI.windowDisplayed variable
     while UI.windowDisplayed != "Quit":
-        if UI.windowDisplayed == "Main Menu":
-            UI.mainMenu()
-        elif UI.windowDisplayed == "Solved Window":
-            UI.solvedWindow(ss)
+        match UI.windowDisplayed:
+            case "Main Menu":
+                UI.mainMenu()
+            case "Input Window":
+                UI.inputWindow(ss)
+            case "Solution Window":
+                UI.solutionWindow(ss)
+            case _:
+                print("unexpected window name")
+                break
 
     pygame.quit()
 
